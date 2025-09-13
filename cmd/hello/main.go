@@ -7,6 +7,7 @@ import (
 	"github.com/akhenakh/xplane-go/camera"
 	"github.com/akhenakh/xplane-go/dref"
 	"github.com/akhenakh/xplane-go/menu"
+	"github.com/akhenakh/xplane-go/navigation" // Added navigation package import
 	"github.com/akhenakh/xplane-go/plugin"
 	"github.com/akhenakh/xplane-go/processing"
 	"github.com/akhenakh/xplane-go/util"
@@ -68,7 +69,9 @@ func (p *HelloPlugin) Enable() error {
 	menu.AppendMenuSeparator(p.ourMenu)
 	menu.AppendMenuItem(p.ourMenu, "Toggle Camera Shake", "camera_item")
 	menu.AppendMenuSeparator(p.ourMenu)
-	menu.AppendMenuItem(p.ourMenu, "Log Current Position", "log_pos_item") // Changed from ADS-B
+	menu.AppendMenuItem(p.ourMenu, "Log Current Position", "log_pos_item")
+	menu.AppendMenuSeparator(p.ourMenu)
+	menu.AppendMenuItem(p.ourMenu, "Show Flight Plan", "flight_plan_item") // Added new menu item
 
 	// DataRef Cache Initialization
 	p.datarefCache = dref.NewDataRefCache()
@@ -95,7 +98,7 @@ func (p *HelloPlugin) Enable() error {
 	log.Println("Successfully initialized and registered all datarefs in cache.")
 	util.DebugString("Successfully initialized and registered all datarefs in cache.\n")
 
-	//  Flight Loop Setup
+	// Flight Loop Setup
 	p.ourFlightLoop = processing.CreateFlightLoop(processing.AfterFlightModel, p.flightLoopCallback)
 	processing.ScheduleFlightLoop(p.ourFlightLoop, 2.0, true)
 
@@ -198,6 +201,8 @@ func (p *HelloPlugin) helloMenuHandler(menuRef, itemRef interface{}) {
 	case "log_pos_item":
 		// This case now calls our new, simpler function.
 		pluginInstance.logCurrentPosition()
+	case "flight_plan_item": // Handle the new menu item
+		pluginInstance.showFlightPlan()
 	}
 }
 
@@ -226,6 +231,61 @@ func (p *HelloPlugin) logCurrentPosition() {
 	logMsg := fmt.Sprintf("Current Position -> Lat: %.4f, Lon: %.4f, Alt: %.0f ft", lat, lon, alt)
 	log.Println(logMsg)
 	util.DebugString(logMsg + "\n")
+}
+
+// showFlightPlan displays the current flight plan waypoints
+func (p *HelloPlugin) showFlightPlan() {
+	// Get the number of entries in the primary flight plan
+	numEntries := navigation.CountFMSFlightPlanEntries(navigation.FplPilotPrimary)
+	if numEntries <= 0 {
+		log.Println("No flight plan entries found")
+		util.DebugString("No flight plan entries found\n")
+		return
+	}
+
+	log.Printf("Flight plan has %d entries", numEntries)
+	util.DebugString(fmt.Sprintf("Flight plan has %d entries\n", numEntries))
+
+	for i := 0; i < numEntries; i++ {
+		entry, err := navigation.GetFMSFlightPlanEntryInfo(navigation.FplPilotPrimary, i)
+		if err != nil {
+			log.Printf("Error getting flight plan entry %d: %v", i, err)
+			util.DebugString(fmt.Sprintf("Error getting flight plan entry %d: %v\n", i, err))
+			continue
+		}
+
+		// Format the entry information
+		var entryType string
+		switch entry.Type {
+		case navigation.NavAirport:
+			entryType = "Airport"
+		case navigation.NavNDB:
+			entryType = "NDB"
+		case navigation.NavVOR:
+			entryType = "VOR"
+		case navigation.NavILS:
+			entryType = "ILS"
+		case navigation.NavLocalizer:
+			entryType = "Localizer"
+		case navigation.NavGlideSlope:
+			entryType = "Glide Slope"
+		case navigation.NavFix:
+			entryType = "Fix"
+		case navigation.NavLatLon:
+			entryType = "Lat/Lon"
+		default:
+			entryType = "Unknown"
+		}
+
+		// Get altitude in feet for display
+		altitudeFeet := float32(entry.Altitude) * 3.28084 // Convert meters to feet
+
+		log.Printf("Waypoint %d: %s (%s), Altitude: %.0f ft, Lat: %.4f, Lon: %.4f",
+			i, entry.ID, entryType, altitudeFeet, entry.Latitude, entry.Longitude)
+
+		util.DebugString(fmt.Sprintf("Waypoint %d: %s (%s), Altitude: %.0f ft, Lat: %.4f, Lon: %.4f\n",
+			i, entry.ID, entryType, altitudeFeet, entry.Latitude, entry.Longitude))
+	}
 }
 
 // cleanup is a helper function to avoid duplicating code in Stop() and Disable().
