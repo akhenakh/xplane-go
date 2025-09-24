@@ -1,7 +1,6 @@
 package navigation
 
 // #cgo CFLAGS: -DXPLM410=1
-// #cgo LDFLAGS: -lXPLM_64
 // #include <stdlib.h>
 // #include "XPLMNavigation.h"
 import "C"

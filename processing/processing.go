@@ -1,7 +1,6 @@
 package processing
 
 // #cgo CFLAGS: -DXPLM200=1 -DXPLM210=1 -DXPLM410=1
-// #cgo LDFLAGS: -lXPLM_64
 // #include <stdlib.h>
 // #include "XPLMProcessing.h"
 //

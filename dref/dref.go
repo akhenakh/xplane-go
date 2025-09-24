@@ -1,7 +1,6 @@
 package dref
 
 // #cgo CFLAGS: -DXPLM410=1
-// #cgo LDFLAGS: -lXPLM_64
 // #include <stdlib.h>
 // #include "XPLMDataAccess.h"
 import "C"

@@ -1,7 +1,6 @@
 package display
 
 // #cgo CFLAGS: -DXPLM410=1
-// #cgo LDFLAGS: -lXPLM_64
 // #include "XPLMDisplay.h"
 import "C"
 

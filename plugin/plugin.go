@@ -1,7 +1,6 @@
 package plugin
 
 // #cgo CFLAGS: -DXPLM410=1
-// #cgo LDFLAGS: -lXPLM_64
 // #include <string.h>
 // #include <stdlib.h>
 // #include "XPLMPlugin.h"

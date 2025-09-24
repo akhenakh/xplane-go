@@ -1,7 +1,6 @@
 package util
 
 // #cgo CFLAGS: -DXPLM410=1
-// #cgo LDFLAGS: -lXPLM_64
 // #include <stdlib.h>
 // #include "XPLMUtilities.h"
 import "C"
