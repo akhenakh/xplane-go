@@ -21,6 +21,11 @@ The library is under active development but provides wrappers for many of the mo
     CGO_CFLAGS="-DLIN=1 -I/usr/include/xplane_sdk/XPLM -I/usr/include/xplane_sdk/Widgets"  CGO_LDFLAGS="-L$(pwd)/lib"  go build -buildmode=c-shared -a -o hello.xpl  ./cmd/hello .
     ```
 
+    Example for Mac OS:
+    ```bash
+    CGO_CFLAGS="-DAPL=1 -I$(pwd)/xplane_sdk/XPLM -I$(pwd)/xplane_sdk/Widgets"  CGO_LDFLAGS="-F/System/Library/Frameworks/ -F$(pwd)/lib -framework XPLM  -framework XPWidgets -framework OpenGL"  go build -buildmode=c-shared -a -o hello.xpl  ./cmd/hello
+    ```
+
 1.  **Install the Plugin:**
     *   Copy the output file (`hello.xpl`) to your X-Plane installation's plugin directory: `X-Plane 12/Resources/plugins/`.
     *   Create a folder for your plugin inside the `plugins` directory (e.g., `X-Plane 12/Resources/plugins/HelloGo/`).
