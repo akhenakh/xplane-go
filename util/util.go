@@ -24,3 +24,15 @@ func GetSystemPath() string {
 	C.XPLMGetSystemPath((*C.char)(unsafe.Pointer(&buffer[0])))
 	return C.GoString((*C.char)(unsafe.Pointer(&buffer[0])))
 }
+
+// GetPrefsPath returns the full path to the X-Plane preferences directory.
+func GetPrefsPath() string {
+	buffer := make([]byte, 512)
+	C.XPLMGetPrefsPath((*C.char)(unsafe.Pointer(&buffer[0])))
+	return C.GoString((*C.char)(unsafe.Pointer(&buffer[0])))
+}
+
+// GetDirectorySeparator returns the directory separator character for the current platform.
+func GetDirectorySeparator() string {
+	return C.GoString(C.XPLMGetDirectorySeparator())
+}
