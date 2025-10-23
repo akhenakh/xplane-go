@@ -3,6 +3,8 @@ package widget
 // #cgo CFLAGS: -DXPLM410=1
 // #cgo LDFLAGS: -lXPWidgets_64
 // #include "XPStandardWidgets.h"
+// #include "XPWidgetDefs.h"
+// #define xpProperty_ObjectClass 100
 import "C"
 
 // Standard Widget Classes
@@ -15,6 +17,14 @@ const (
 	CaptionClass    WidgetClass = C.xpWidgetClass_Caption
 )
 
+// Common Properties
+const (
+	PropertyRefcon                      PropertyID    = C.xpProperty_Refcon
+	PropertyObjectClass                 PropertyID    = C.xpProperty_ObjectClass // The widget's class
+	PropertyMainWindowHasCloseBoxes     PropertyID    = C.xpProperty_MainWindowHasCloseBoxes
+	MessageMainWindowCloseButtonPressed WidgetMessage = C.xpMessage_CloseButtonPushed
+)
+
 // Button Properties and Messages
 const (
 	PropertyButtonType        PropertyID    = C.xpProperty_ButtonType
@@ -22,6 +32,11 @@ const (
 	PropertyButtonState       PropertyID    = C.xpProperty_ButtonState
 	MessagePushButtonPressed  WidgetMessage = C.xpMsg_PushButtonPressed
 	MessageButtonStateChanged WidgetMessage = C.xpMsg_ButtonStateChanged
+)
+
+// TextField Properties
+const (
+	PropertyTextFieldPasswordMode PropertyID = C.xpProperty_PasswordMode
 )
 
 // Button Types

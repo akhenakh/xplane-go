@@ -4,9 +4,14 @@ package widget
 // #cgo LDFLAGS: -lXPWidgets_64
 // #include <stdlib.h>
 // #include "XPWidgets.h"
+//
+// extern int widgetCallback_cgo(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
 import "C"
 
-import "unsafe"
+import (
+	"sync"
+	"unsafe"
+)
 
 type WidgetID C.XPWidgetID
 type WidgetClass int
@@ -15,8 +20,65 @@ type PropertyID int
 type DispatchMode int
 
 // WidgetFunc is the callback for custom widget behavior.
-// Return true if the message was handled.
+// It receives the message, the widget that received it, and two message-specific parameters.
+// Return true (1) if you handled the message, or false (0) to pass it to a parent widget.
 type WidgetFunc func(message WidgetMessage, widget WidgetID, param1, param2 int) bool
+
+var (
+	widgetCallbackRegistry         = make(map[uintptr]WidgetFunc)
+	nextCallbackID         uintptr = 1
+	registryMutex          sync.RWMutex
+)
+
+func registerWidgetCallback(callback WidgetFunc) uintptr {
+	registryMutex.Lock()
+	defer registryMutex.Unlock()
+	id := nextCallbackID
+	nextCallbackID++
+	widgetCallbackRegistry[id] = callback
+	return id
+}
+
+func getWidgetCallback(id uintptr) WidgetFunc {
+	registryMutex.RLock()
+	defer registryMutex.RUnlock()
+	return widgetCallbackRegistry[id]
+}
+
+//export widgetCallback_cgo
+func widgetCallback_cgo(inMessage C.XPWidgetMessage, inWidget C.XPWidgetID, inParam1 C.intptr_t, inParam2 C.intptr_t) C.int {
+	id := uintptr(C.XPGetWidgetProperty(inWidget, C.xpProperty_Refcon, nil))
+	if callback := getWidgetCallback(id); callback != nil {
+		handled := callback(
+			WidgetMessage(inMessage),
+			WidgetID(inWidget),
+			int(inParam1),
+			int(inParam2),
+		)
+		if handled {
+			return 1
+		}
+	}
+	return 0
+}
+
+// AddWidgetCallback attaches a callback function to a widget.
+// The callback will be executed when the widget receives messages.
+func AddWidgetCallback(id WidgetID, callback WidgetFunc) {
+	callbackID := registerWidgetCallback(callback)
+	// We store our Go callback's ID in the widget's 'refcon' property.
+	// The C trampoline function will use this to find the correct Go func.
+	SetWidgetProperty(id, PropertyRefcon, int(callbackID))
+	C.XPAddWidgetCallback(C.XPWidgetID(id), C.XPWidgetFunc_t(C.widgetCallback_cgo))
+}
+
+// GetWidgetClass returns the class of a given widget.
+func GetWidgetClass(id WidgetID) WidgetClass {
+	// CORRECTED IMPLEMENTATION:
+	// A widget's class is retrieved via its ObjectClass property.
+	class, _ := GetWidgetProperty(id, PropertyObjectClass)
+	return WidgetClass(class)
+}
 
 // CreateWidget creates a new widget.
 func CreateWidget(left, top, right, bottom int, visible bool, desc string, isRoot bool, container WidgetID, class WidgetClass) WidgetID {
@@ -60,8 +122,11 @@ func SetWidgetDescriptor(id WidgetID, desc string) {
 // GetWidgetDescriptor gets the text associated with a widget.
 func GetWidgetDescriptor(id WidgetID) string {
 	buf := make([]byte, 1024)
-	len := C.XPGetWidgetDescriptor(C.XPWidgetID(id), (*C.char)(unsafe.Pointer(&buf[0])), 1024)
-	return string(buf[:len])
+	length := C.XPGetWidgetDescriptor(C.XPWidgetID(id), (*C.char)(unsafe.Pointer(&buf[0])), 1024)
+	if length <= 0 {
+		return ""
+	}
+	return string(buf[:length])
 }
 
 // GetWidgetProperty retrieves a property value from a widget.

@@ -223,3 +223,9 @@ func DestroyMenu(menuID MenuID) {
 	}
 	C.XPLMDestroyMenu(C.XPLMMenuID(menuID))
 }
+
+func SetMenuItemName(menuID MenuID, index int, name string) {
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
+	C.XPLMSetMenuItemName(C.XPLMMenuID(menuID), C.int(index), cName, 0)
+}
